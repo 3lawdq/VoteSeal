@@ -1,0 +1,151 @@
+
+## ✅ PHASE 1: Setup Local Blockchain and Smart Contract
+
+📁 Folder: `LocalBlockchain`
+
+1. Install Hardhat (once)
+
+```
+npm install --save-dev @types/file-saver
+npm install --save-dev hardhat
+npm install file-saver
+npm install merkletreejs keccak256
+
+```
+
+2. **Start Local Hardhat Node**
+
+```
+npx hardhat node
+```
+
+⚠️ Keep this terminal open! It runs your blockchain on `http://127.0.0.1:8545`.
+
+---
+
+3. Tunnel with Cloudflare (Optional for frontend access)
+
+```
+cloudflared tunnel --url http://localhost:8545
+```
+
+⚠️ Copy the Cloudflare URL shown in terminal. You will use it in the next steps.
+Example: `https://slow-songs-pontiac-diamonds.trycloudflare.com`
+
+---
+
+4. Update Hardhat Config
+
+📄 File: `LocalBlockchain/hardhat.config.js`
+
+Replace the URL in `cloudflared.url` with your actual Cloudflare tunnel:
+
+```
+cloudflared: {
+  url: "https://your-cloudflare-url/",
+  chainId: 31337,
+  accounts: [
+    "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+  ],
+}
+```
+
+---
+
+5. Deploy the Contract
+
+```
+npx hardhat run scripts/deploy.js --network cloudflared
+```
+
+📋 Copy the deployed address from terminal output:
+
+```
+✅ Contract deployed at: 0xABC123...456
+```
+
+---
+
+✅ PHASE 2: Connect Frontend to Smart Contract
+
+📁 Folder: `VoteChain-my-new-branch`
+
+6. Update Contract Config
+
+📄 File: `src/config/contract.ts`
+
+Replace:
+
+* `contractAddress` with the deployed address from step 5.
+* `rpcTarget` with your Cloudflare tunnel.
+
+```ts
+export const contractAddress = "0xABC123...456"; // from deploy
+export const rpcTarget = "https://your-cloudflare-url/";
+export const chainIdHex = "0x7a69"; // 31337
+export const contractAbi = [/* ABI from Voting.json */];
+```
+
+---
+
+7. Install Frontend Dependencies
+
+```
+npm install
+```
+
+---
+
+8. **Run the Frontend
+
+```
+npm run dev
+```
+
+> Navigate to: [http://localhost:9002](http://localhost:9002)
+
+You should now see the VoteChain web app. Login via Web3Auth → See candidates → Vote.
+
+---
+
+✅ PHASE 3: Test Smart Contract Functions (Optional Console)
+
+Send ETH to Another Account
+
+```js
+web3.eth.getAccounts().then(accounts =>
+  web3.eth.sendTransaction({
+    from: accounts[0],
+    to: "0x2Cc35403B382b87828D8d3882acF3557319e4632",
+    value: web3.utils.toWei("10", "ether")
+  }).then(r => console.log("✅ ETH sent:", r.transactionHash))
+);
+```
+Run Hardhat Console in Blockchain Folder
+
+node scripts/sendETH.js
+
+Register Voter via Script
+
+```js
+const fs = require('fs');
+const Web3 = require('web3');
+const web3 = new Web3('http://localhost:8545');
+const abi = JSON.parse(fs.readFileSync('artifacts/contracts/Voting.sol/Voting.json', 'utf8')).abi;
+const contract = new web3.eth.Contract(abi, '0x...'); // Replace with contract address
+
+web3.eth.getAccounts().then(accounts => {
+  contract.methods.registerVoter('0x2Cc35403B382b87828D8d3882acF3557319e4632')
+    .send({ from: accounts[0] })
+    .on('receipt', () => console.log('✅ Voter registered'))
+    .on('error', console.error);
+});
+```
+Run Hardhat Console in Blockchain Folder
+
+node scripts/registerVoter.js
+
+####################
+Results page
+Language 
+speed 
